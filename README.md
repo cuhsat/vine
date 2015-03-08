@@ -1,2 +1,2 @@
 # Vine
-Visual Quine in (Flat) Assembler 
+Visual Quine in Flat Assembler 
