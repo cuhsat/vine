@@ -1,11 +1,4 @@
-#  Object Files
-*.OBJ
-
-# List Files
-*.LST
-
-# Map files
-*.MAP
-
-# Executable files
-*.EXE
+*.exe
+*.lst
+*.map
+*.obj
