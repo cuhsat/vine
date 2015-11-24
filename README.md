@@ -1,7 +1,6 @@
 # Vine
 Visual Quine in 32-bit x86 FLAT Assembler
 
-_yay chavlu' 'e' bajnISlu'_
-_(Victory must be earned)_
+**yay chavlu' 'e' bajnISlu'**
 
-_-Klingon proverb_
+_- Klingon proverb_
