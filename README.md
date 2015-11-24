@@ -1,5 +1,5 @@
 # Vine
-Visual Quine in Flat Assembler 
+Visual Quine in 32-bit x86 FLAT Assembler
 
 _yay chavlu' 'e' bajnISlu'_
 _(Victory must be earned)_
