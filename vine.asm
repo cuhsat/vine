@@ -1,18 +1,17 @@
-
                         ; The MIT License (MIT)
-                        ; 
-                        ; Copyright (c) 2015 Christian Uhsat <christian@uhsat.de>
-                        ; 
+                        ;
+                        ; Copyright (c) 2019 Christian Uhsat <christian@uhsat.de>
+                        ;
                         ; Permission is hereby granted, free of charge, to any person obtaining a copy
                         ; of this software and associated documentation files (the "Software"), to deal
                         ; in the Software without restriction, including without limitation the rights
                         ; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
                         ; copies of the Software, and to permit persons to whom the Software is
                         ; furnished to do so, subject to the following conditions:
-                        ; 
+                        ;
                         ; The above copyright notice and this permission notice shall be included in all
                         ; copies or substantial portions of the Software.
-                        ; 
+                        ;
                         ; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
                         ; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
                         ; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,11 +24,11 @@
                         org 0x00400000
                         use32
 
-                        ; PE Header (Collapsed)
+                        ; PE Header (collapsed)
 
                         dw "MZ"                         ; e_magic
                         dw 0                            ; e_cblp
-                        dd "PE"                         ; e_cp, e_crlc          ; PE Signature
+                        dd "PE"                         ; e_cp, e_crlc          ; PE signature
                         dw 0x014C                       ; e_cparhdr             ; Machine (Intel 386)
                         dw 0                            ; e_minalloc            ; NumberOfSections
                         dd 0                            ; e_maxalloc, e_ss      ; TimeDateStamp
@@ -67,22 +66,22 @@
                         dd 0                                                    ; SizeOfHeapCommit
                         dd 0                                                    ; LoaderFlags
                         dd 0                                                    ; NumberOfRvaAndSizes
-                
-                        dd 0                                                    ; Align Code
-                
-                        ; Entry Point               
-                
+
+                        dd 0                                                    ; Align code
+
+                        ; Entry Point
+
                         call    CODE                                            ; Execute
-                
-                        ; Import Hash Table             
-                
-BASE                    dd      0x00000000                                      ; Image Base
-                
-LoadLibraryA            dd      0xA412FD89              
-ExitProcess             dd      0xE6FF2CB9              
-Sleep                   dd      0x0005F218              
-                
-USER32                  db      "USER32", 0                                     ; Filename User32.dll
+
+                        ; Import hash table
+
+BASE                    dd      0x00000000                                      ; Image base
+
+LoadLibraryA            dd      0xA412FD89
+ExitProcess             dd      0xE6FF2CB9
+Sleep                   dd      0x0005F218
+
+USER32                  db      "USER32", 0                                     ; user32.dll
 
 CreateWindowExA         dd      0x73AD3F4D
 GetWindowRect           dd      0xDD604A89
@@ -91,34 +90,34 @@ FillRect                dd      0x09547E2C
 ShowCursor              dd      0xFC1A2BC8
 GetAsyncKeyState        dd      0x5BC4096E
 
-GDI32                   db      "GDI32", 0                                      ; Filename GDI32.dll
-                
-StretchDIBits           dd      0xD1E60854              
-CreateSolidBrush        dd      0xBB1B46D3              
-                
-Class                   db      "static", 0                                     ; Window Class
-                
-CODE:                   pop     ebp                                             ; Get Return Address
-                        sub     ebp, 5                                          ; Calc Image Base
-                        mov     [BASE], ebp                                     ; Save Image Base
-                
-                        ; Find KERNEL32.dll             
-                
+GDI32                   db      "GDI32", 0                                      ; gdi32.dll
+
+StretchDIBits           dd      0xD1E60854
+CreateSolidBrush        dd      0xBB1B46D3
+
+Class                   db      "static", 0                                     ; Window class
+
+CODE:                   pop     ebp                                             ; Get return address
+                        sub     ebp, 5                                          ; Calc image base
+                        mov     [BASE], ebp                                     ; Save image base
+
+                        ; Find kernel32.dll
+
                         mov     ebx, [fs:0x18]                                  ; Goto linear TIB
                         mov     ebx, [ebx + 0x30]                               ; Goto linear PEB
                         mov     ebx, [ebx + 0x0C]                               ; Goto PEB_LDR_DATA
-                        mov     ebx, [ebx + 0x14]                               ; Goto Init LIST_ENTRY
-                        mov     ebx, [ebx]                                      ; Goto Next LIST_ENTRY
-                        mov     ebx, [ebx]                                      ; Goto Next LIST_ENTRY
+                        mov     ebx, [ebx + 0x14]                               ; Goto init LIST_ENTRY
+                        mov     ebx, [ebx]                                      ; Goto next LIST_ENTRY
+                        mov     ebx, [ebx]                                      ; Goto next LIST_ENTRY
                         mov     ebx, [ebx + 0x10]                               ; Goto DllBase
 
-                        ; Import KERNEL32.dll
+                        ; Load user32.dll
 
                         push    LoadLibraryA
                         push    USER32
-                        call    IMPORT                                          ; Import Functions
+                        call    IMPORT
 
-                        ; Import USER32.dll
+                        ; Import from user32.dll
 
                         push    USER32
                         call    [LoadLibraryA]
@@ -126,164 +125,166 @@ CODE:                   pop     ebp                                             
 
                         push    CreateWindowExA
                         push    GDI32
-                        call    IMPORT                                          ; Import Functions
+                        call    IMPORT
 
-                        ; Import GDI32.dll
+                        ; Load gdi32.dll
 
                         push    GDI32
                         call    [LoadLibraryA]
                         mov     ebx, eax
 
+                        ; Import from gdi32.dll
+
                         push    StretchDIBits
                         push    Class
-                        call    IMPORT                                          ; Import Functions
+                        call    IMPORT
 
-                        ; Create Color Table
+                        ; Create color table
 
-                        xor     eax, eax                                        ; Zero Register
-                        xor     ebx, ebx                                        ; Zero Register
-                        xor     ecx, ecx                                        ; Zero Register
+                        xor     eax, eax                                        ; Zero register
+                        xor     ebx, ebx                                        ; Zero register
+                        xor     ecx, ecx                                        ; Zero register
                         mov     edi, Colors                                     ;
                         mov     ecx, 256                                        ;
 @@:                     stosb                                                   ; Save A
                         stosb                                                   ; Save R
                         stosb                                                   ; Save G
                         stosb                                                   ; Save B
-                        inc     eax                                             ; Next Color
-                        loopnz  @B                                              ; Next Color
-                
-                        mov     eax, Class                                      ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
+                        inc     eax                                             ; Next color
+                        loopnz  @B                                              ; Next color
+
+                        mov     eax, Class                                      ; Class / Window name
+                        push    ebx                                             ; lpParam
+                        push    ebx                                             ; hInstance
+                        push    ebx                                             ; hMenu
+                        push    ebx                                             ; hWndParent
+                        push    ebx                                             ; nHeight
+                        push    ebx                                             ; nWidth
+                        push    ebx                                             ; Y
+                        push    ebx                                             ; X
                         push    0x97800000                                      ; WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_MAXIMIZE | WS_POPUP | WS_VISIBLE | WS_BORDER
-                        push    eax                                             ;
-                        push    eax                                             ;
+                        push    eax                                             ; lpWindowName
+                        push    eax                                             ; lpClassName
                         push    0x00040000                                      ; WS_EX_APPWINDOW (| WS_EX_TOPMOST 0x00040008)
-                        call    [CreateWindowExA]                               ;
-                        push    eax                                             ;
-                        push    Window                                          ;
-                        push    eax                                             ;
-                        call    [GetWindowRect]                                 ;   
-                        call    [GetDC]                                         ;
+                        call    [CreateWindowExA]
+                        push    eax                                             ; hWnd
+                        push    Window                                          ; lpRect
+                        push    eax                                             ; hWnd
+                        call    [GetWindowRect]
+                        call    [GetDC]
                         mov     esi, eax                                        ;
-                        push    ebx                                             ;
-                        call    [CreateSolidBrush]                              ;
-                        push    eax                                             ;
-                        push    Window                                          ;
-                        push    esi                                             ;
-                        call    [FillRect]                                      ;
-                        push    ebx                                             ; Hide Cursor
-                        call    [ShowCursor]                                    ; Call ShowCursor
-                
-RENDER:                 ; Main Loop             
-                
-                        mov     edx, 64 * 8                 
-                        push    0x00CC0020                                      ;
-                        push    ebx                                             ;
-                        push    Header                                          ;
-                        push    [BASE]                                          ;
-                        push    64                                              ;
-                        push    64                                              ;
-                        push    ebx                                             ;
-                        push    ebx                                             ;
-                        push    edx                                             ;
-                        push    edx                                             ;
-                
-                        mov     eax, [Height]               
-                        sub     eax, edx                
-                        shr     eax, 1              
-                        push    eax             
-                
-                        mov     eax, [Width]                
-                        sub     eax, edx                
-                        shr     eax, 1              
-                        push    eax             
-                
-                        push    esi                                             ; hdc
+                        push    ebx                                             ; color
+                        call    [CreateSolidBrush]
+                        push    eax                                             ; hbr
+                        push    Window                                          ; lprc
+                        push    esi                                             ; hDC
+                        call    [FillRect]
+                        push    ebx                                             ; Hide cursor
+                        call    [ShowCursor]
+
+RENDER:                 ; Main Loop
+
+                        mov     edx, 64 * 8
+                        push    0x00CC0020                                      ; rop
+                        push    ebx                                             ; iUsage
+                        push    Header                                          ; lpbmi
+                        push    [BASE]                                          ; lpBits
+                        push    64                                              ; SrcHeight
+                        push    64                                              ; SrcWidth
+                        push    ebx                                             ; ySrc
+                        push    ebx                                             ; xSrc
+                        push    edx                                             ; DestHeight
+                        push    edx                                             ; DestWidth
+
+                        mov     eax, [Height]                                   ;
+                        sub     eax, edx                                        ;
+                        shr     eax, 1                                          ;
+                        push    eax                                             ; yDest
+
+                        mov     eax, [Width]                                    ;
+                        sub     eax, edx                                        ;
+                        shr     eax, 1                                          ;
+                        push    eax                                             ; xDest
+
+                        push    esi                                             ; hDC
                         call    [StretchDIBits]                                 ;
-                
-                        ; Idle              
-                
-                        push    1                                               ;
-                        call    [Sleep]                                         ;
-                                        
-                        push    0x1B                                            ;
-                        call    [GetAsyncKeyState]                              ;
-                                        
-                        cmp     eax, 0                                          ;
-                        je      RENDER                                          ;
-                
-                        ; Exit              
-                
+
+                        ; Idle
+
+                        push    1                                               ; Millisecond
+                        call    [Sleep]                                         ; Sleep
+
+                        push    0x1B                                            ; VK_ESCAPE
+                        call    [GetAsyncKeyState]                              ; Check key state
+
+                        cmp     eax, 0                                          ; Next frame
+                        je      RENDER                                          ; Next frame
+
+                        ; Exit
+
                         push    ebx                                             ; Stack 0
                         call    [ExitProcess]                                   ; Call ExitProcess
-                        ret                                                     ; End of Code
-                
-IMPORT:                 ; Find EXPORT Directory             
-                
+                        ret                                                     ; Exit
+
+IMPORT:                 ; Find EXPORT directory
+
                         mov     eax, [ebx + 0x3C]                               ; Goto e_lfanew
-                        mov     eax, [ebx + eax + 0x78]                         ; Goto EXPORT Directory
-                        mov     edi, [ebx + eax + 0x20]                         ; Load Base of EXPORT Names
-                        mov     ebp, eax                                        ; Load Base of EXPORT Directory
-                        add     ebp, ebx                                        ; RVA to Fix
-                        add     edi, ebx                                        ; RVA to Fix
-                
-                        ; Import Functions              
-                
-I1:                     xor     ecx, ecx                                        ; Zero EXPORT Name
-I2:                     inc     ecx                                             ; Next EXPORT Name
-                        mov     esi, [edi + ecx * 4]                            ; Load EXPORT Name
-                        add     esi, ebx                                        ; RVA to Fix
-                
-                        ; Generate HASH             
-                
-                        xor     eax, eax                                        ; Init HASH Function
-                        xor     edx, edx                                        ; Init HASH Function
-                
-                        ; Generate HASH Round               
-                                    
+                        mov     eax, [ebx + eax + 0x78]                         ; Goto EXPORT directory
+                        mov     edi, [ebx + eax + 0x20]                         ; Load base of EXPORT names
+                        mov     ebp, eax                                        ; Load base of EXPORT directory
+                        add     ebp, ebx                                        ; RVA to fix
+                        add     edi, ebx                                        ; RVA to fix
+
+                        ; Import functions
+
+I1:                     xor     ecx, ecx                                        ; Zero EXPORT name
+I2:                     inc     ecx                                             ; Next EXPORT name
+                        mov     esi, [edi + ecx * 4]                            ; Load EXPORT name
+                        add     esi, ebx                                        ; RVA to fix
+
+                        ; Generate hash
+
+                        xor     eax, eax                                        ; Init hash function
+                        xor     edx, edx                                        ; Init hash function
+
+                        ; Generate hash round
+
 @@:                     rol     edx, 3                                          ; Round
                         xor     edx, eax                                        ; Round
                         lodsb                                                   ; Round
                         cmp     al, 0                                           ; Round
                         jne     @B                                              ; Round
-                                        
-                        mov     eax, [esp + 0x08]                               ; Load Function HASH
-                        cmp     edx, [eax]                                      ; Test Function HASH
-                        jne     I2                                              ; Next EXPORT Name
-                
-                        mov     edx, [ebp + 0x24]                               ; Load Base of EXPORT Ordinals
-                        add     edx, ebx                                        ; RVA to Fix
-                        mov      cx, [edx + ecx * 2]                            ; Load EXPORT Ordinal
-                
-                        mov     edx, [ebp + 0x1C]                               ; Load Base of EXPORT Functions
-                        add     edx, ebx                                        ; RVA to Fix
-                        mov     edx, [edx + ecx * 4]                            ; Load EXPORT Function
-                
-                        add     edx, ebx                                        ; RVA to Fix                        
-                        mov     [eax], edx                                      ; Save EXPORT Function
-                        add     eax, 4                                          ; Next EXPORT Function
-                        mov     [esp + 0x08], eax                               ; Next EXPORT Function
-                        cmp     eax, [esp + 0x04]                               ; End of Import
-                        jb      I1                                              ; End of Import
-                
-                        ret     8                                               ; End of Function
-                
-Window:                 ; RECT              
-                
-                        dd      0               
-                        dd      0               
-Width:                  dd      0               
-Height:                 dd      0               
-                
-Header:                 ; BITMAPINFOHEADER              
-                
+
+                        mov     eax, [esp + 0x08]                               ; Load function hash
+                        cmp     edx, [eax]                                      ; Test function hash
+                        jne     I2                                              ; Next EXPORT name
+
+                        mov     edx, [ebp + 0x24]                               ; Load base of EXPORT ordinals
+                        add     edx, ebx                                        ; RVA to fix
+                        mov      cx, [edx + ecx * 2]                            ; Load EXPORT ordinal
+
+                        mov     edx, [ebp + 0x1C]                               ; Load base of EXPORT functions
+                        add     edx, ebx                                        ; RVA to fix
+                        mov     edx, [edx + ecx * 4]                            ; Load EXPORT function
+
+                        add     edx, ebx                                        ; RVA to fix
+                        mov     [eax], edx                                      ; Save EXPORT function
+                        add     eax, 4                                          ; Next EXPORT function
+                        mov     [esp + 0x08], eax                               ; Next EXPORT function
+                        cmp     eax, [esp + 0x04]                               ; End of import
+                        jb      I1                                              ; End of import
+
+                        ret     8                                               ; End of function
+
+Window:                 ; RECT structure
+
+                        dd      0                                               ; left
+                        dd      0                                               ; top
+Width:                  dd      0                                               ; right
+Height:                 dd      0                                               ; bottom
+
+Header:                 ; BITMAPINFOHEADER structure
+
                         dd      0x00000028                                      ; biSize
                         dd      0x00000040                                      ; biWidth
                         dd      0xFFFFFFC6                                      ; biHeight
@@ -296,4 +297,4 @@ Header:                 ; BITMAPINFOHEADER
                         dd      0x00000100                                      ; biClrUsed
                         dd      0x00000100                                      ; biClrImportant
 
-Colors:                 ; <Patched by Code>
+Colors:                 ; <Build at runtime>
